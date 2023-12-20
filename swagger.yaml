@@ -1,0 +1,312 @@
+swagger: '2.0'
+info:
+  title: Inventory API
+  version: '1.0.0'
+host: localhost:8000
+basePath: '/'
+schemes:
+  - http
+paths:
+  /devices:
+    get:
+      summary: Get a list of all devices
+      description: Retrieves a list of all devices from the database.
+      responses:
+        200:
+          description: A list of devices
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Device'
+        500:
+          description: Internal Server Error
+    post:
+      summary: Add a new device
+      description: Adds a new device to the database with the provided information.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: device
+          description: Device object that needs to be added to the store
+          required: true
+          schema:
+            $ref: '#/definitions/NewDevice'
+      responses:
+        201:
+          description: Device created
+        500:
+          description: Error on the server
+  /devices/{id}:
+    get:
+      summary: Get a device by its ID
+      description: Retrieves detailed information about a device with the given ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the device
+          type: integer
+      responses:
+        200:
+           description: Detailed information about the device
+           schema:
+            $ref: '#/definitions/Device'
+        404:
+          description: Device not found
+        500:
+          description: Internal Server Error
+    put:
+      summary: Update an existing device
+      description: Updates an existing device identified by the ID with the provided information.
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of the device that needs to be updated
+        - in: body
+          name: device
+          description: Device object with updated information
+          required: true
+          schema:
+            $ref: '#/definitions/NewDevice'
+      responses:
+        200:
+          description: Device updated successfully
+        404:
+          description: Device not found
+        500:
+          description: Error on the server
+
+    delete:
+      summary: Delete a device
+      description: Deletes a device with the specified ID from the database.
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of the device to delete
+      responses:
+        200:
+          description: Device deleted successfully
+        404:
+          description: Device not found
+        500:
+          description: Error on the server
+
+  /upload/{deviceId}:
+    post:
+      summary: Upload a device image
+      description: Uploads an image for the device with the given ID.
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: path
+          name: deviceId
+          type: integer
+          required: true
+          description: ID of the device to which the image belongs
+        - in: formData
+          name: deviceImage
+          type: file
+          required: true
+          description: Image file to upload
+      responses:
+        200:
+          description: File uploaded successfully
+        404:
+          description: Device not found
+        500:
+          description: Error on the server
+  /device-image/{deviceId}:
+    get:
+      summary: Retrieve a device image
+      description: Retrieves and displays the image for a specific device using its ID.
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          type: integer
+          description: The ID of the device whose image is to be retrieved.
+      responses:
+        200:
+          description: HTML page with the device image displayed.
+        404:
+          description: Image not found.
+        500:
+          description: Error occurred on the server.
+  /register:
+    post:
+      summary: Register a new user
+      description: Creates a new user with the provided username, password, and email.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: The user to create
+          required: true
+          schema:
+            type: object
+            required:
+              - username
+              - password
+              - email
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+                format: password
+              email:
+                type: string
+                format: email
+      responses:
+        201:
+          description: User created successfully
+        400:
+          description: Missing username, password, or email
+        500:
+          description: Server error
+  /login:
+    post:
+      summary: Authenticate a user
+      description: Logs in a user by username and password.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: credentials
+          description: The user's login credentials
+          required: true
+          schema:
+            type: object
+            required:
+              - username
+              - password
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+                format: password
+      responses:
+        200:
+          description: Login successful
+        401:
+          description: Login failed
+        404:
+          description: User not found
+        500:
+          description: Server error
+  /devices/{id}/checkout:
+    post:
+      summary: Check out a device
+      description: Assigns a device to a user, marking it as checked out.
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of the device to check out.
+        - in: body
+          name: userId
+          required: true
+          schema:
+            type: object
+            properties:
+              userId:
+                type: integer
+                description: ID of the user who is checking out the device.
+      responses:
+        200:
+          description: Device checked out successfully.
+        400:
+          description: Bad request, user ID is required.
+        404:
+          description: Device is not available or does not exist.
+        500:
+          description: Server error.
+  /devices/{id}/checkin:
+    post:
+      summary: Check in a device
+      description: Marks a device as returned by setting its user_id to NULL.
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of the device to check in.
+      responses:
+        200:
+          description: Device checked in successfully.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Device with id = 1 checked in successfully."
+        400:
+          description: Device is not checked out or does not exist.
+        500:
+          description: Server error.
+
+definitions:
+  Device:
+    type: object
+    required:
+      - id
+      - device_name
+      - description
+      - serial_number
+      - manufacturer
+    properties:
+      id:
+        type: integer
+        format: int64
+      device_name:
+        type: string
+      description:
+        type: string
+      serial_number:
+        type: string
+      manufacturer:
+        type: string
+  NewDevice:
+    type: object
+    required:
+      - device_name
+      - description
+      - serial_number
+      - manufacturer
+    properties:
+      device_name:
+        type: string
+      description:
+        type: string
+      serial_number:
+        type: string
+      manufacturer:
+        type: string
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      username:
+        type: string
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+        format: password
+
+
+
+
